@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traction — Get Your First 100 Customers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080808;
+    --dark: #0f0f0f;
+    --dark-2: #161616;
+    --dark-3: #1e1e1e;
+    --white: #f5f3ee;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --gold-dim: #a8893e;
+    --gold-bg: rgba(201,168,76,0.07);
+    --gold-border: rgba(201,168,76,0.2);
+    --muted: rgba(245,243,238,0.4);
+    --faint: rgba(245,243,238,0.15);
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--black); color: var(--white); font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 3rem;
+    background: rgba(8,8,8,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(245,243,238,0.06);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--serif); font-size: 1.2rem; font-weight: 600;
+    color: var(--white); text-decoration: none; letter-spacing: 0.01em;
+  }
+  .nav-logo-mark {
+    width: 28px; height: 28px;
+    border: 1px solid var(--gold-border);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--gold-bg);
+  }
+  .nav-logo-mark svg { width: 14px; height: 14px; }
+  .nav-links { display: flex; align-items: center; gap: 2.5rem; list-style: none; }
+  .nav-links a { font-size: 0.8125rem; color: var(--muted); text-decoration: none; letter-spacing: 0.02em; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    background: var(--gold) !important; color: var(--black) !important;
+    padding: 0.5rem 1.25rem; border-radius: 4px;
+    font-weight: 500 !important; font-size: 0.8125rem !important;
+    letter-spacing: 0.03em; transition: opacity 0.2s !important;
+  }
+  .nav-cta:hover { opacity: 0.85 !important; }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 8rem 2rem 5rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+    background: var(--black);
+  }
+
+  /* Noise texture overlay */
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; opacity: 0.4;
+  }
+
+  /* Gold ambient light */
+  .hero-glow {
+    position: absolute; top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, rgba(201,168,76,0.02) 40%, transparent 70%);
+    pointer-events: none;
+    animation: glowPulse 8s ease-in-out infinite;
+  }
+
+  /* Thin horizontal rule lines */
+  .hero-lines {
+    position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  }
+  .hero-lines::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 1px; height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.15), transparent);
+  }
+  .hero-lines::after {
+    content: '';
+    position: absolute; top: 50%; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(201,168,76,0.08), transparent);
+  }
+
+  @keyframes glowPulse { 0%,100%{opacity:0.7;transform:translateX(-50%) scale(1)} 50%{opacity:1;transform:translateX(-50%) scale(1.08)} }
+
+  .hero-kicker {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-kicker::before, .hero-kicker::after {
+    content: ''; width: 32px; height: 1px; background: var(--gold-dim); opacity: 0.6;
+  }
+
+  .hero-headline {
+    font-family: var(--serif);
+    font-size: clamp(3.25rem, 8vw, 6.5rem);
+    line-height: 0.97;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--white);
+    max-width: 900px;
+    margin-bottom: 1.75rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.25s;
+  }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 400;
+  }
+  .hero-headline .line-2 {
+    display: block;
+    color: rgba(245,243,238,0.55);
+    font-weight: 400;
+  }
+
+  .hero-sub {
+    font-size: 1.0625rem;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.75;
+    margin-bottom: 3rem;
+    font-weight: 300;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero-actions {
+    display: flex; align-items: center; gap: 1.25rem;
+    flex-wrap: wrap; justify-content: center;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.55s;
+  }
+
+  .btn-primary {
+    background: var(--gold); color: var(--black);
+    padding: 0.9375rem 2.5rem; border-radius: 4px;
+    font-family: var(--sans); font-size: 0.9375rem; font-weight: 500;
+    text-decoration: none; letter-spacing: 0.02em;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 24px rgba(201,168,76,0.2);
+    position: relative; overflow: hidden;
+  }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(201,168,76,0.3); }
+
+  .btn-ghost {
+    color: var(--muted); font-size: 0.875rem;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: color 0.2s; border-bottom: 1px solid transparent;
+  }
+  .btn-ghost:hover { color: var(--white); border-bottom-color: rgba(245,243,238,0.2); }
+
+  .hero-proof {
+    margin-top: 4rem;
+    display: flex; align-items: center; gap: 2rem;
+    font-family: var(--mono); font-size: 0.6875rem;
+    color: var(--faint); flex-wrap: wrap; justify-content: center;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.7s;
+  }
+  .hero-proof span { display: flex; align-items: center; gap: 8px; }
+  .hero-proof span::before { content: '—'; color: var(--gold-dim); }
+
+  /* ── TICKER ── */
+  .ticker {
+    border-top: 1px solid rgba(245,243,238,0.06);
+    border-bottom: 1px solid rgba(245,243,238,0.06);
+    padding: 0.875rem 0; overflow: hidden;
+    background: var(--dark);
+  }
+  .ticker-track {
+    display: flex; gap: 4rem;
+    animation: ticker 25s linear infinite; white-space: nowrap;
+  }
+  .ticker-item {
+    font-family: var(--mono); font-size: 0.6875rem;
+    color: rgba(245,243,238,0.25); letter-spacing: 0.12em;
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .ticker-sep { color: var(--gold-dim); opacity: 0.5; margin-right: 4rem; }
+
+  /* ── SECTIONS ── */
+  .section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+  .section-kicker {
+    font-family: var(--mono); font-size: 0.6875rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold-dim); margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-kicker::before { content: ''; width: 24px; height: 1px; background: var(--gold-dim); }
+
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.08; color: var(--white);
+    margin-bottom: 1rem; max-width: 640px; font-weight: 600;
+  }
+  .section-title em { font-style: italic; color: var(--gold); font-weight: 400; }
+
+  .section-sub {
+    font-size: 0.9375rem; color: var(--muted);
+    max-width: 480px; font-weight: 300;
+    margin-bottom: 3rem; line-height: 1.75;
+  }
+
+  /* ── STEPS ── */
+  .steps {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border: 1px solid rgba(245,243,238,0.07); border-radius: 2px;
+    overflow: hidden;
+  }
+  .step {
+    padding: 2.5rem 2rem;
+    border-right: 1px solid rgba(245,243,238,0.07);
+    transition: background 0.25s; position: relative;
+  }
+  .step:last-child { border-right: none; }
+  .step:hover { background: rgba(201,168,76,0.03); }
+  .step-num {
+    font-family: var(--mono); font-size: 0.6875rem;
+    color: var(--gold-dim); letter-spacing: 0.1em;
+    margin-bottom: 1.5rem; display: block;
+  }
+  .step-title { font-size: 1rem; font-weight: 500; color: var(--white); margin-bottom: 0.625rem; line-height: 1.4; }
+  .step-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; font-weight: 300; }
+
+  /* ── FEATURES ── */
+  .features-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border: 1px solid rgba(245,243,238,0.07); border-radius: 2px;
+    overflow: hidden;
+  }
+  .feature {
+    padding: 2rem 2rem 2.25rem;
+    border-right: 1px solid rgba(245,243,238,0.07);
+    border-bottom: 1px solid rgba(245,243,238,0.07);
+    transition: background 0.25s; position: relative; overflow: hidden;
+  }
+  .feature:nth-child(even) { border-right: none; }
+  .feature:nth-last-child(-n+2) { border-bottom: none; }
+  .feature:hover { background: rgba(201,168,76,0.03); }
+  .feature-num {
+    font-family: var(--mono); font-size: 0.625rem;
+    color: var(--gold-dim); letter-spacing: 0.1em;
+    margin-bottom: 1rem; opacity: 0.7;
+  }
+  .feature-title { font-size: 0.9375rem; font-weight: 500; color: var(--white); margin-bottom: 0.5rem; }
+  .feature-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; font-weight: 300; }
+
+  /* ── TESTIMONIALS ── */
+  .testimonials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 3rem; }
+  .testimonial {
+    border: 1px solid rgba(245,243,238,0.07); border-radius: 2px;
+    padding: 1.75rem; transition: all 0.25s;
+    position: relative; overflow: hidden;
+    background: rgba(245,243,238,0.015);
+  }
+  .testimonial::before {
+    content: '\201C';
+    position: absolute; top: -8px; right: 20px;
+    font-family: var(--serif); font-size: 6rem;
+    color: rgba(201,168,76,0.07); line-height: 1; pointer-events: none;
+  }
+  .testimonial:hover { border-color: var(--gold-border); background: var(--gold-bg); }
+  .testimonial-text {
+    font-family: var(--serif); font-size: 0.9375rem;
+    font-style: italic; line-height: 1.75;
+    color: rgba(245,243,238,0.75); margin-bottom: 1.5rem;
+  }
+  .testimonial-author { display: flex; align-items: center; gap: 10px; }
+  .testimonial-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold-bg); border: 1px solid var(--gold-border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 0.6875rem; color: var(--gold-dim);
+    flex-shrink: 0;
+  }
+  .testimonial-name { font-size: 0.8125rem; font-weight: 500; color: var(--white); }
+  .testimonial-role { font-size: 0.75rem; color: var(--faint); font-family: var(--mono); letter-spacing: 0.04em; }
+
+  /* ── PRICING ── */
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(245,243,238,0.07); border: 1px solid rgba(245,243,238,0.07); border-radius: 2px; overflow: hidden; margin-top: 3rem; }
+  .pricing-card { padding: 2.5rem 2rem; background: var(--dark); position: relative; transition: background 0.2s; }
+  .pricing-card:hover { background: var(--dark-2); }
+  .pricing-card.featured { background: var(--dark-2); }
+  .pricing-badge {
+    position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: var(--black);
+    font-family: var(--mono); font-size: 0.5625rem; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.25rem 1rem; white-space: nowrap;
+  }
+  .pricing-tier {
+    font-family: var(--mono); font-size: 0.6875rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold-dim); margin-bottom: 1.5rem;
+  }
+  .pricing-price {
+    font-family: var(--serif); font-size: 3rem;
+    font-weight: 700; line-height: 1;
+    color: var(--white); margin-bottom: 0.25rem;
+  }
+  .pricing-card.featured .pricing-price { color: var(--gold); }
+  .pricing-period { font-family: var(--mono); font-size: 0.6875rem; color: var(--faint); margin-bottom: 2rem; letter-spacing: 0.06em; }
+  .pricing-features { list-style: none; margin-bottom: 2rem; border-top: 1px solid rgba(245,243,238,0.07); padding-top: 1.5rem; }
+  .pricing-features li { font-size: 0.875rem; color: var(--muted); padding: 0.4rem 0; display: flex; align-items: center; gap: 10px; font-weight: 300; }
+  .pricing-features li::before { content: '—'; font-size: 0.75rem; color: var(--gold-dim); flex-shrink: 0; }
+  .btn-plan {
+    display: block; width: 100%; text-align: center;
+    padding: 0.75rem; border-radius: 3px;
+    font-family: var(--sans); font-size: 0.875rem; font-weight: 500;
+    text-decoration: none; transition: all 0.15s;
+    border: 1px solid rgba(245,243,238,0.12);
+    background: transparent; color: var(--white);
+    letter-spacing: 0.02em;
+  }
+  .btn-plan:hover { border-color: rgba(245,243,238,0.3); background: rgba(245,243,238,0.04); }
+  .pricing-card.featured .btn-plan { background: var(--gold); color: var(--black); border-color: var(--gold); }
+  .pricing-card.featured .btn-plan:hover { opacity: 0.88; }
+
+  /* ── APP MOCKUP ── */
+  .mockup-section { padding: 0 2rem 5rem; max-width: 1100px; margin: 0 auto; }
+  .mockup {
+    border: 1px solid rgba(245,243,238,0.08); border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.05);
+  }
+  .mockup-bar {
+    background: var(--dark-2); border-bottom: 1px solid rgba(245,243,238,0.06);
+    padding: 0.875rem 1rem; display: flex; align-items: center; gap: 8px;
+  }
+  .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mockup-body { display: grid; grid-template-columns: 220px 1fr; min-height: 360px; }
+  .mockup-sidebar { background: var(--dark); border-right: 1px solid rgba(245,243,238,0.06); padding: 1.25rem; }
+  .mockup-sidebar-title { font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,243,238,0.2); margin-bottom: 0.75rem; }
+  .mockup-nav-item { display: flex; align-items: center; gap: 8px; padding: 0.45rem 0.625rem; border-radius: 3px; font-size: 0.8125rem; color: rgba(245,243,238,0.3); margin-bottom: 2px; }
+  .mockup-nav-item.active { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-border); }
+  .mockup-nav-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(245,243,238,0.1); flex-shrink: 0; }
+  .mockup-nav-item.active .mockup-nav-dot { background: var(--gold); }
+  .mockup-main { padding: 1.75rem; background: var(--dark); }
+  .mockup-greeting { font-family: var(--serif); font-size: 1.375rem; color: var(--white); margin-bottom: 0.25rem; }
+  .mockup-sub { font-size: 0.8125rem; color: rgba(245,243,238,0.3); margin-bottom: 1.5rem; font-weight: 300; }
+  .mockup-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .mockup-stat { background: rgba(245,243,238,0.03); border: 1px solid rgba(245,243,238,0.06); border-radius: 3px; padding: 0.875rem; }
+  .mockup-stat-val { font-size: 1.375rem; font-weight: 600; color: var(--gold); font-family: var(--serif); }
+  .mockup-stat-label { font-family: var(--mono); font-size: 0.625rem; color: rgba(245,243,238,0.25); margin-top: 3px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .mockup-task { background: var(--dark); border: 1px solid rgba(245,243,238,0.06); border-radius: 3px; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.8125rem; color: rgba(245,243,238,0.6); }
+  .mockup-task-check { width: 15px; height: 15px; border-radius: 2px; border: 1px solid rgba(245,243,238,0.15); flex-shrink: 0; }
+  .mockup-task-check.done { background: var(--gold); border-color: var(--gold); }
+
+  /* ── CTA ── */
+  .cta-section {
+    padding: 7rem 2rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+    background: var(--dark);
+    border-top: 1px solid rgba(245,243,238,0.06);
+  }
+  .cta-section::before {
+    content: ''; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .cta-section .section-title { margin: 0 auto 1rem; }
+  .cta-section .section-sub { margin: 0 auto 2.5rem; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--black);
+    border-top: 1px solid rgba(245,243,238,0.06);
+    padding: 2rem 3rem;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 0.6875rem;
+    color: rgba(245,243,238,0.2); letter-spacing: 0.06em;
+  }
+  footer a { color: rgba(245,243,238,0.2); text-decoration: none; transition: color 0.2s; }
+  footer a:hover { color: var(--white); }
+  .footer-links { display: flex; gap: 2rem; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .steps { grid-template-columns: 1fr; }
+    .step { border-right: none; border-bottom: 1px solid rgba(245,243,238,0.07); }
+    .features-grid { grid-template-columns: 1fr; }
+    .testimonials { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; gap: 0; }
+    .mockup-sidebar { display: none; }
+    .mockup-body { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5" stroke="#c9a84c" stroke-width="1.1"/>
+        <path d="M4.5 7h5M7 4.5v5" stroke="#c9a84c" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    Traction
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">Method</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="/app.html" class="nav-cta">Get started →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-lines"></div>
+
+  <div class="hero-kicker">AI-powered customer acquisition</div>
+
+  <h1 class="hero-headline">
+    Your first 100 customers<br>
+    <em>are closer than you think.</em>
+    <span class="line-2">Stop guessing. Start growing.</span>
+  </h1>
+
+  <p class="hero-sub">Traction builds your custom acquisition strategy, writes all your outreach, and tells you exactly what to do next — every single day.</p>
+
+  <div class="hero-actions">
+    <a href="/app.html" class="btn-primary">Get started →</a>
+    <a href="#how" class="btn-ghost">See how it works ↓</a>
+  </div>
+
+  <div class="hero-proof">
+    <span>No credit card required</span>
+    <span>Setup in 5 minutes</span>
+    <span>Cancel anytime</span>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item">Cold email</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">LinkedIn outreach</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Community growth</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Content strategy</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Paid acquisition</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Referral programs</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Partnership outreach</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Product-led growth</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Cold email</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">LinkedIn outreach</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Community growth</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Content strategy</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Paid acquisition</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Referral programs</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Partnership outreach</span><span class="ticker-sep">✦</span>
+    <span class="ticker-item">Product-led growth</span><span class="ticker-sep">✦</span>
+  </div>
+</div>
+
+<!-- APP MOCKUP -->
+<div class="mockup-section" style="padding-top:5rem">
+  <div class="mockup reveal">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#ff5f56"></div>
+      <div class="mockup-dot" style="background:#ffbd2e"></div>
+      <div class="mockup-dot" style="background:#27c93f"></div>
+    </div>
+    <div class="mockup-body">
+      <div class="mockup-sidebar">
+        <div class="mockup-sidebar-title">Workspace</div>
+        <div class="mockup-nav-item active"><div class="mockup-nav-dot"></div> Dashboard</div>
+        <div class="mockup-nav-item"><div class="mockup-nav-dot"></div> My Plan</div>
+        <div class="mockup-nav-item"><div class="mockup-nav-dot"></div> Outreach</div>
+        <div class="mockup-nav-item"><div class="mockup-nav-dot"></div> Playbooks</div>
+        <div class="mockup-nav-item"><div class="mockup-nav-dot"></div> AI Co-pilot</div>
+        <div style="margin-top:1.5rem">
+          <div class="mockup-sidebar-title">Progress</div>
+          <div style="font-family:var(--mono);font-size:0.625rem;color:rgba(245,243,238,0.25);margin-bottom:6px;letter-spacing:0.06em">12 / 100 customers</div>
+          <div style="background:rgba(245,243,238,0.06);border-radius:1px;height:3px">
+            <div style="background:var(--gold);width:12%;height:3px;border-radius:1px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mockup-main">
+        <div class="mockup-greeting">Good morning, Alex.</div>
+        <div class="mockup-sub">3 actions to take today to get closer to customer #13.</div>
+        <div class="mockup-cards">
+          <div class="mockup-stat"><div class="mockup-stat-val">12</div><div class="mockup-stat-label">Customers</div></div>
+          <div class="mockup-stat"><div class="mockup-stat-val">47</div><div class="mockup-stat-label">Outreaches</div></div>
+          <div class="mockup-stat"><div class="mockup-stat-val">26%</div><div class="mockup-stat-label">Reply rate</div></div>
+        </div>
+        <div class="mockup-task"><div class="mockup-task-check done"></div>Follow up with 3 LinkedIn leads from Tuesday</div>
+        <div class="mockup-task"><div class="mockup-task-check"></div>Post in r/entrepreneur — Traction wrote it for you</div>
+        <div class="mockup-task"><div class="mockup-task-check"></div>Send cold email batch to 10 Shopify store owners</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="section-kicker reveal">Method</div>
+  <h2 class="section-title reveal">Three steps to your<br><em>first paying customer</em></h2>
+  <p class="section-sub reveal">No guesswork. No wasted hours. A clear path built specifically for your business.</p>
+  <div class="steps reveal">
+    <div class="step">
+      <span class="step-num">01 / ONBOARD</span>
+      <div class="step-title">Tell us about your business</div>
+      <div class="step-desc">Answer 10 questions about your product, audience, and goals. Takes 5 minutes. Traction learns everything it needs to build your strategy.</div>
+    </div>
+    <div class="step">
+      <span class="step-num">02 / STRATEGIZE</span>
+      <div class="step-title">Get your custom acquisition plan</div>
+      <div class="step-desc">Traction generates a living strategy built specifically for you — the right channels, the right messaging, the right order of operations.</div>
+    </div>
+    <div class="step">
+      <span class="step-num">03 / EXECUTE</span>
+      <div class="step-title">Execute, track, and adapt</div>
+      <div class="step-desc">Traction writes your outreach, tells you what to do each day, and learns from your results. The plan gets smarter the longer you use it.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features" style="padding-top:0">
+  <div class="section-kicker reveal">Features</div>
+  <h2 class="section-title reveal">Everything you need to<br><em>go from zero to customers</em></h2>
+  <p class="section-sub reveal">No more wondering what to do next.</p>
+  <div class="features-grid reveal">
+    <div class="feature">
+      <div class="feature-num">01</div>
+      <div class="feature-title">Custom acquisition strategy</div>
+      <div class="feature-desc">A personalized plan built for your exact business — not a generic template. Updates as you make progress and your situation changes.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">02</div>
+      <div class="feature-title">AI outreach writer</div>
+      <div class="feature-desc">Cold emails, LinkedIn DMs, Reddit posts, partnership pitches — written and ready to send. Just copy, paste, and go.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">03</div>
+      <div class="feature-title">Daily action plan</div>
+      <div class="feature-desc">Wake up knowing exactly what to do today to get closer to your next customer. No decision fatigue. Just clear next steps.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">04</div>
+      <div class="feature-title">Progress tracking</div>
+      <div class="feature-desc">Log your results. Traction sees what's working and doubles down. See your customer count grow in real time.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">05</div>
+      <div class="feature-title">AI co-pilot chat</div>
+      <div class="feature-desc">Ask anything. Get answers that actually know your business, your market, and your goals. Like having a CMO on demand.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">06</div>
+      <div class="feature-title">Channel playbooks</div>
+      <div class="feature-desc">Step-by-step guides for every acquisition channel — cold email, social media, communities, paid ads, partnerships, and more.</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" style="padding-top:0">
+  <div class="section-kicker reveal">Social proof</div>
+  <h2 class="section-title reveal">Real results from<br><em>real founders</em></h2>
+  <div class="testimonials reveal">
+    <div class="testimonial">
+      <div class="testimonial-text">"I had been stuck at zero customers for 3 months. Traction gave me a plan on day one and I had my first paying customer within two weeks."</div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">MK</div>
+        <div><div class="testimonial-name">Marcus K.</div><div class="testimonial-role">Founder, SaaS tool</div></div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="testimonial-text">"The outreach it writes actually sounds like me. I've tried other tools and they feel robotic. Traction's emails get replies."</div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">SL</div>
+        <div><div class="testimonial-name">Sara L.</div><div class="testimonial-role">Solo founder, e-commerce</div></div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="testimonial-text">"I didn't know what channels to focus on. Traction told me exactly where my customers were and how to reach them. Game changer."</div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">DJ</div>
+        <div><div class="testimonial-name">David J.</div><div class="testimonial-role">Founder, B2B agency</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing" style="padding-top:0">
+  <div class="section-kicker reveal">Pricing</div>
+  <h2 class="section-title reveal">Simple pricing,<br><em>serious results</em></h2>
+  <p class="section-sub reveal">Paid from day one. No trials, no free tiers — just a product worth paying for.</p>
+  <div class="pricing-grid reveal">
+    <div class="pricing-card">
+      <div class="pricing-tier">Starter</div>
+      <div class="pricing-price">$49</div>
+      <div class="pricing-period">per month</div>
+      <ul class="pricing-features">
+        <li>Custom acquisition plan</li>
+        <li>Daily action checklist</li>
+        <li>Outreach writer (50/mo)</li>
+        <li>3 channel playbooks</li>
+        <li>Progress tracking</li>
+      </ul>
+      <a href="/app.html" class="btn-plan">Get started →</a>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Most popular</div>
+      <div class="pricing-tier">Pro</div>
+      <div class="pricing-price">$99</div>
+      <div class="pricing-period">per month</div>
+      <ul class="pricing-features">
+        <li>Everything in Starter</li>
+        <li>Unlimited outreach writing</li>
+        <li>All channel playbooks</li>
+        <li>AI co-pilot chat</li>
+        <li>Advanced analytics</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="/app.html" class="btn-plan">Get started →</a>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-tier">Agency</div>
+      <div class="pricing-price">$249</div>
+      <div class="pricing-period">per month</div>
+      <ul class="pricing-features">
+        <li>Everything in Pro</li>
+        <li>Up to 10 client workspaces</li>
+        <li>White-label reports</li>
+        <li>Team collaboration</li>
+        <li>Dedicated account manager</li>
+      </ul>
+      <a href="/app.html" class="btn-plan">Get started →</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div style="position:relative;z-index:1;max-width:600px;margin:0 auto">
+    <div class="section-kicker" style="justify-content:center;margin-bottom:1.25rem">Get started today</div>
+    <h2 class="section-title" style="margin:0 auto 1rem;text-align:center">Stop guessing.<br><em>Start getting customers.</em></h2>
+    <p class="section-sub" style="margin:0 auto 2.5rem;text-align:center">Join founders who stopped wondering what to do next and started building businesses that actually grow.</p>
+    <div style="display:flex;justify-content:center">
+      <a href="/app.html" class="btn-primary">Get your first customer →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="nav-logo" style="font-size:1rem;gap:8px;color:rgba(245,243,238,0.3)">
+    <div class="nav-logo-mark" style="width:22px;height:22px">
+      <svg viewBox="0 0 14 14" fill="none" style="width:11px;height:11px">
+        <circle cx="7" cy="7" r="5" stroke="#c9a84c" stroke-width="1.1"/>
+        <path d="M4.5 7h5M7 4.5v5" stroke="#c9a84c" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    Traction
+  </a>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </div>
+  <div>© 2026 Traction. All rights reserved.</div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) setTimeout(() => entry.target.classList.add('visible'), i * 100);
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+</script>
+</body>
+</html>
