@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traction App</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --dark: #111111;
+    --dark-2: #1a1a1a;
+    --dark-border: rgba(255,255,255,0.08);
+    --white: #fafaf8;
+    --gray-100: #f4f4f0;
+    --gray-200: #e8e8e2;
+    --gray-400: #b0afa8;
+    --gray-600: #6b6a63;
+    --green: #c9a84c;
+    --green-dim: #a8893e;
+    --green-bg: rgba(201,168,76,0.08);
+    --green-border: rgba(201,168,76,0.18);
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: var(--sans); background: var(--dark); color: var(--white); font-size: 15px; line-height: 1.6; overflow: hidden; }
+
+  /* LAYOUT */
+  .app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar { background: var(--black); border-right: 1px solid var(--dark-border); display: flex; flex-direction: column; padding: 1.5rem 1rem; overflow-y: auto; }
+  .sidebar-logo { display: flex; align-items: center; gap: 8px; font-family: var(--serif); font-size: 1.1rem; color: var(--white); margin-bottom: 2rem; padding: 0 0.5rem; }
+  .logo-mark { width: 26px; height: 26px; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-mark svg { width: 14px; height: 14px; }
+  .sidebar-section { font-family: var(--mono); font-size: 0.6rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 0 0.5rem; margin-bottom: 0.5rem; margin-top: 1.25rem; }
+  .sidebar-section:first-of-type { margin-top: 0; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 0.5rem 0.625rem; border-radius: 7px; font-size: 0.875rem; color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); }
+  .nav-item.active { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--dark-border); }
+  .progress-label { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-bar { background: rgba(255,255,255,0.08); border-radius: 100px; height: 4px; }
+  .progress-fill { background: var(--green); height: 4px; border-radius: 100px; transition: width 0.4s ease; }
+  .progress-count { font-size: 1.25rem; font-weight: 500; color: var(--white); margin-bottom: 4px; }
+  .progress-sub { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-bottom: 10px; }
+
+  /* MAIN */
+  .main { display: flex; flex-direction: column; overflow: hidden; background: var(--dark); }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem; border-bottom: 1px solid var(--dark-border); flex-shrink: 0; }
+  .topbar-title { font-size: 0.9375rem; font-weight: 500; color: var(--white); }
+  .topbar-sub { font-size: 0.8125rem; color: rgba(255,255,255,0.3); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--green-bg); border: 1px solid var(--green-border); display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 500; color: var(--green); }
+  .content { flex: 1; overflow-y: auto; padding: 1.75rem; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ONBOARDING */
+  .onboarding-wrap { max-width: 600px; margin: 0 auto; padding: 1rem 0; }
+  .onboard-step { display: none; }
+  .onboard-step.active { display: block; animation: fadeIn 0.4s ease; }
+  .step-indicator { display: flex; align-items: center; gap: 5px; margin-bottom: 2.5rem; }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.3s ease; }
+  .step-dot.done { background: var(--green); transform: scale(1); }
+  .step-dot.current { background: var(--green); box-shadow: 0 0 0 4px var(--green-bg); width: 20px; border-radius: 3px; }
+  .onboard-eyebrow { font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+  .onboard-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--green); }
+  .onboard-q { font-family: var(--serif); font-size: 2rem; line-height: 1.15; color: var(--white); margin-bottom: 0.5rem; font-weight: 600; }
+  .onboard-hint { font-size: 0.875rem; color: rgba(255,255,255,0.3); margin-bottom: 2rem; font-weight: 300; line-height: 1.6; }
+  .onboard-input { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1rem 1.125rem; font-family: var(--sans); font-size: 0.9375rem; color: var(--white); outline: none; transition: all 0.2s; resize: none; }
+  .onboard-input:focus { border-color: var(--green); background: rgba(201,168,76,0.04); box-shadow: 0 0 0 4px rgba(201,168,76,0.06); }
+  .onboard-input::placeholder { color: rgba(255,255,255,0.15); }
+  .onboard-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; }
+  .onboard-opt { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.875rem 1rem; cursor: pointer; font-size: 0.875rem; color: rgba(255,255,255,0.5); transition: all 0.15s; text-align: left; font-family: var(--sans); line-height: 1.4; }
+  .onboard-opt:hover { border-color: var(--green-border); color: var(--white); background: rgba(201,168,76,0.05); transform: translateY(-1px); }
+  .onboard-opt.selected { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.08); box-shadow: 0 0 0 1px rgba(0,230,118,0.15); }
+  .onboard-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06); }
+  .btn-back { background: none; border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.35); padding: 0.625rem 1.25rem; border-radius: 8px; cursor: pointer; font-family: var(--sans); font-size: 0.875rem; transition: all 0.15s; }
+  .btn-back:hover { color: var(--white); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+  .btn-next { background: var(--green); color: var(--black); padding: 0.75rem 1.75rem; border-radius: 8px; cursor: pointer; font-family: var(--sans); font-size: 0.875rem; font-weight: 500; border: none; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(201,168,76,0.15); }
+  .btn-next:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.25); }
+  .btn-next:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* DASHBOARD */
+  .greeting { font-family: var(--serif); font-size: 1.875rem; color: var(--white); margin-bottom: 0.25rem; font-weight: 600; }
+  .greeting-sub { font-size: 0.875rem; color: rgba(255,255,255,0.3); margin-bottom: 1.75rem; font-weight: 300; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1.25rem 1.375rem; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+  .stat-card:hover { border-color: rgba(255,255,255,0.12); transform: translateY(-1px); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,230,118,0.3), transparent); opacity: 0; transition: opacity 0.2s; }
+  .stat-card:hover::before { opacity: 1; }
+  .stat-card-icon { font-size: 1.25rem; margin-bottom: 0.75rem; }
+  .stat-val { font-size: 2rem; font-weight: 600; color: var(--white); line-height: 1; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .stat-val.green { color: var(--green); text-shadow: 0 0 20px rgba(201,168,76,0.25); }
+  .stat-label { font-family: var(--mono); font-size: 0.625rem; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .stat-trend { font-size: 0.6875rem; color: var(--green); margin-top: 6px; display: flex; align-items: center; gap: 3px; }
+  .dash-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.25rem; }
+  .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 1.375rem; }
+  .card-title { font-family: var(--mono); font-size: 0.6rem; font-weight: 500; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 1.125rem; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; width: 3px; height: 12px; background: var(--green); border-radius: 2px; }
+  .progress-ring-wrap { display: flex; align-items: center; gap: 1.25rem; padding: 1rem 0 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 1.25rem; }
+  .progress-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .progress-ring-num { font-size: 1.125rem; font-weight: 600; color: var(--green); line-height: 1; }
+  .progress-ring-label { font-family: var(--mono); font-size: 0.5rem; color: rgba(255,255,255,0.3); margin-top: 2px; letter-spacing: 0.06em; }
+  .progress-ring-text { flex: 1; }
+  .progress-ring-title { font-size: 0.9375rem; font-weight: 500; color: var(--white); margin-bottom: 3px; }
+  .progress-ring-sub { font-size: 0.8125rem; color: rgba(255,255,255,0.3); font-weight: 300; line-height: 1.5; }
+  .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 0.75rem 0; border-bottom: 1px solid var(--dark-border); cursor: pointer; }
+  .task-item:last-child { border-bottom: none; }
+  .task-check { width: 18px; height: 18px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0; margin-top: 1px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .task-check.done { background: var(--green); border-color: var(--green); }
+  .task-check.done::after { content: '✓'; font-size: 11px; color: var(--black); font-weight: 600; }
+  .task-text { font-size: 0.875rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
+  .task-text.done { text-decoration: line-through; color: rgba(255,255,255,0.25); }
+  .task-tag { font-size: 0.6875rem; color: var(--green); background: var(--green-bg); border: 1px solid var(--green-border); padding: 2px 7px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+  .plan-item { padding: 0.75rem 0; border-bottom: 1px solid var(--dark-border); }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-channel { font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--green); margin-bottom: 3px; }
+  .plan-text { font-size: 0.8125rem; color: rgba(255,255,255,0.55); line-height: 1.5; font-weight: 300; }
+  .generating { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; color: rgba(255,255,255,0.3); padding: 1rem 0; }
+  .dot-pulse { display: flex; gap: 4px; }
+  .dot-pulse span { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 1.2s ease-in-out infinite; }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* OUTREACH */
+  .outreach-grid { display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; height: calc(100vh - 120px); }
+  .outreach-sidebar { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .template-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--dark-border); border-radius: 9px; padding: 0.875rem 1rem; cursor: pointer; text-align: left; transition: all 0.15s; font-family: var(--sans); }
+  .template-btn:hover { border-color: var(--green-border); background: var(--green-bg); }
+  .template-btn.active { border-color: var(--green); background: var(--green-bg); }
+  .template-name { font-size: 0.875rem; font-weight: 500; color: var(--white); margin-bottom: 3px; }
+  .template-desc { font-size: 0.75rem; color: rgba(255,255,255,0.35); font-weight: 300; }
+  .outreach-main { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  .outreach-form { background: rgba(255,255,255,0.03); border: 1px solid var(--dark-border); border-radius: 12px; padding: 1.25rem; }
+  .form-row { margin-bottom: 1rem; }
+  .form-label { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .form-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--dark-border); border-radius: 8px; padding: 0.625rem 0.875rem; font-family: var(--sans); font-size: 0.875rem; color: var(--white); outline: none; transition: border-color 0.2s; }
+  .form-input:focus { border-color: var(--green-border); }
+  .form-input::placeholder { color: rgba(255,255,255,0.2); }
+  .btn-generate { background: var(--green); color: var(--black); border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-family: var(--sans); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 7px; width: 100%; justify-content: center; }
+  .btn-generate:hover { opacity: 0.88; }
+  .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+  .output-box { background: rgba(255,255,255,0.03); border: 1px solid var(--dark-border); border-radius: 12px; padding: 1.25rem; flex: 1; }
+  .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .output-label { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; }
+  .btn-copy { background: none; border: 1px solid var(--dark-border); color: rgba(255,255,255,0.4); padding: 0.375rem 0.875rem; border-radius: 6px; cursor: pointer; font-family: var(--sans); font-size: 0.75rem; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--green-border); color: var(--green); }
+  .output-text { font-size: 0.875rem; color: rgba(255,255,255,0.7); line-height: 1.8; white-space: pre-wrap; font-weight: 300; min-height: 200px; }
+  .output-placeholder { color: rgba(255,255,255,0.2); font-style: italic; }
+
+  /* PLAN PAGE */
+  .plan-full { max-width: 700px; }
+  .plan-section { margin-bottom: 2rem; }
+  .plan-section-title { font-family: var(--serif); font-size: 1.1rem; color: var(--white); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .plan-section-title span { font-size: 0.75rem; background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green); padding: 2px 8px; border-radius: 4px; font-family: var(--sans); font-weight: 500; }
+  .plan-card { background: rgba(255,255,255,0.03); border: 1px solid var(--dark-border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 8px; }
+  .plan-card-title { font-size: 0.875rem; font-weight: 500; color: var(--white); margin-bottom: 4px; }
+  .plan-card-body { font-size: 0.8125rem; color: rgba(255,255,255,0.45); line-height: 1.6; font-weight: 300; }
+  .empty-state { text-align: center; padding: 4rem 2rem; color: rgba(255,255,255,0.2); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .empty-title { font-family: var(--serif); font-size: 1.25rem; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem; }
+  .empty-sub { font-size: 0.875rem; font-weight: 300; }
+
+  /* COMPLETE SCREEN */
+  .complete-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
+  .complete-icon { width: 64px; height: 64px; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 1.5rem; }
+  .complete-title { font-family: var(--serif); font-size: 2rem; color: var(--white); margin-bottom: 0.5rem; }
+  .complete-sub { font-size: 0.9375rem; color: rgba(255,255,255,0.4); max-width: 420px; font-weight: 300; line-height: 1.7; margin-bottom: 2rem; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.2); border-top-color: var(--black); border-radius: 50%; animation: spin 0.6s linear infinite; }
+
+  /* AUTH SCREEN */
+  .auth-screen { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .auth-screen.hidden { display: none; }
+  .auth-box { width: 100%; max-width: 400px; padding: 2rem; }
+  .auth-logo { display: flex; align-items: center; gap: 8px; font-family: var(--serif); font-size: 1.25rem; color: var(--white); margin-bottom: 2.5rem; }
+  .auth-logo-mark { width: 28px; height: 28px; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+  .auth-logo-mark svg { width: 14px; height: 14px; }
+  .auth-title { font-family: var(--serif); font-size: 1.75rem; color: var(--white); margin-bottom: 0.375rem; }
+  .auth-sub { font-size: 0.875rem; color: rgba(255,255,255,0.35); margin-bottom: 2rem; font-weight: 300; }
+  .auth-field { margin-bottom: 1rem; }
+  .auth-label { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+  .auth-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--dark-border); border-radius: 8px; padding: 0.75rem 1rem; font-family: var(--sans); font-size: 0.9375rem; color: var(--white); outline: none; transition: border-color 0.2s; }
+  .auth-input:focus { border-color: var(--green-border); background: rgba(201,168,76,0.03); }
+  .auth-input::placeholder { color: rgba(255,255,255,0.2); }
+  .btn-auth { width: 100%; background: var(--green); color: var(--black); border: none; padding: 0.875rem; border-radius: 8px; font-family: var(--sans); font-size: 0.9375rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-auth:hover { opacity: 0.88; }
+  .btn-auth:disabled { opacity: 0.4; cursor: not-allowed; }
+  .auth-switch { text-align: center; margin-top: 1.25rem; font-size: 0.875rem; color: rgba(255,255,255,0.3); }
+  .auth-switch a { color: var(--green); cursor: pointer; text-decoration: none; }
+  .auth-switch a:hover { text-decoration: underline; }
+  .auth-error { background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.2); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; color: #ff6b6b; margin-bottom: 1rem; display: none; }
+  .auth-error.visible { display: block; }
+  .auth-divider { display: flex; align-items: center; gap: 12px; margin: 1.25rem 0; }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--dark-border); }
+  .auth-divider span { font-size: 0.75rem; color: rgba(255,255,255,0.2); }
+
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+<body>
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="auth-screen" style="display:flex">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-mark"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#c9a84c" stroke-width="1.1"/><path d="M4.5 7h5M7 4.5v5" stroke="#c9a84c" stroke-width="1.1" stroke-linecap="round"/></svg></div>
+      Traction
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <!-- LOGIN -->
+    <div id="auth-login">
+      <div class="auth-title">Welcome back.</div>
+      <div class="auth-sub">Sign in to your Traction account.</div>
+      <div class="auth-field"><label class="auth-label">Email</label><input class="auth-input" type="email" id="login-email" placeholder="you@example.com"></div>
+      <div class="auth-field"><label class="auth-label">Password</label><input class="auth-input" type="password" id="login-password" placeholder="••••••••"></div>
+      <button class="btn-auth" id="btn-login" onclick="handleLogin()">Sign in →</button>
+      <div class="auth-switch">No account? <a onclick="switchAuth('signup')">Create one free</a></div>
+    </div>
+    <!-- SIGNUP -->
+    <div id="auth-signup" style="display:none">
+      <div class="auth-title">Get started free.</div>
+      <div class="auth-sub">Create your Traction account in seconds.</div>
+      <div class="auth-field"><label class="auth-label">Email</label><input class="auth-input" type="email" id="signup-email" placeholder="you@example.com"></div>
+      <div class="auth-field"><label class="auth-label">Password</label><input class="auth-input" type="password" id="signup-password" placeholder="Min. 8 characters"></div>
+      <button class="btn-auth" id="btn-signup" onclick="handleSignup()">Create account →</button>
+      <div class="auth-switch">Already have an account? <a onclick="switchAuth('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+<div class="app" id="main-app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#c9a84c" stroke-width="1.1"/><path d="M4.5 7h5M7 4.5v5" stroke="#c9a84c" stroke-width="1.1" stroke-linecap="round"/></svg>
+      </div>
+      Traction
+    </div>
+
+    <div class="sidebar-section">Main</div>
+    <button class="nav-item active" onclick="showPage('dashboard', this)">
+      <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('plan', this)">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h10M3 12h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      My Plan
+    </button>
+    <button class="nav-item" onclick="showPage('outreach', this)">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5M2 4h12v9H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      Outreach Writer
+    </button>
+
+    <div class="sidebar-section">Settings</div>
+    <button class="nav-item" onclick="showPage('onboarding', this); resetOnboarding()">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Business Profile
+    </button>
+
+    <div class="sidebar-footer"><button class="nav-item" onclick="handleLogout()" style="margin-bottom:12px;width:100%"><svg viewBox="0 0 16 16" fill="none" width="15" height="15"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Sign out</button>
+      <div class="progress-count" id="sb-customer-count">0</div>
+      <div class="progress-sub">of 100 customers</div>
+      <div class="progress-bar"><div class="progress-fill" id="sb-progress" style="width:0%"></div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="topbar-sub">Your daily overview</div>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="user-avatar">?</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ONBOARDING PAGE -->
+      <div class="page active" id="page-onboarding">
+        <div class="onboarding-wrap">
+          <div id="onboard-steps-container">
+
+            <!-- Step 1 -->
+            <div class="onboard-step active" data-step="1">
+              <div class="step-indicator" id="dots-1"></div>
+              <div class="onboard-eyebrow">Step 1 of 10 — Let's get started</div><div class="onboard-q">What's your name?</div>
+              <div class="onboard-hint">Just your first name is fine.</div>
+              <input class="onboard-input" type="text" placeholder="e.g. Alex" id="ans-name" oninput="checkStep(1)">
+              <div class="onboard-nav">
+                <div></div>
+                <button class="btn-next" id="next-1" onclick="nextStep(1)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="onboard-step" data-step="2">
+              <div class="step-indicator" id="dots-2"></div>
+              <div class="onboard-eyebrow">Step 2 of 10 — Your business</div><div class="onboard-q">What does your business do?</div>
+              <div class="onboard-hint">Describe it in plain English — like you'd tell a friend.</div>
+              <textarea class="onboard-input" rows="4" placeholder="e.g. I built a tool that helps Shopify stores reduce returns by showing better product photos..." id="ans-business" oninput="checkStep(2)"></textarea>
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(2)">← Back</button>
+                <button class="btn-next" id="next-2" onclick="nextStep(2)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="onboard-step" data-step="3">
+              <div class="step-indicator" id="dots-3"></div>
+              <div class="onboard-eyebrow">Step 3 of 10 — Your audience</div><div class="onboard-q">Who is your ideal customer?</div>
+              <div class="onboard-hint">Be as specific as possible — job title, company size, industry.</div>
+              <textarea class="onboard-input" rows="3" placeholder="e.g. Solo founders and small SaaS companies with 1-10 employees doing under $10k MRR..." id="ans-customer" oninput="checkStep(3)"></textarea>
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(3)">← Back</button>
+                <button class="btn-next" id="next-3" onclick="nextStep(3)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="onboard-step" data-step="4">
+              <div class="step-indicator" id="dots-4"></div>
+              <div class="onboard-eyebrow">Step 4 of 10 — Your pricing</div><div class="onboard-q">What's your monthly price?</div>
+              <div class="onboard-hint">Approximate is fine.</div>
+              <div class="onboard-options">
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-price', 4)">Free / freemium</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-price', 4)">Under $50/mo</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-price', 4)">$50–$200/mo</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-price', 4)">$200+/mo</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-price', 4)">One-time purchase</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-price', 4)">Not decided yet</button>
+              </div>
+              <input type="hidden" id="ans-price">
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(4)">← Back</button>
+                <button class="btn-next" id="next-4" onclick="nextStep(4)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="onboard-step" data-step="5">
+              <div class="step-indicator" id="dots-5"></div>
+              <div class="onboard-eyebrow">Step 5 of 10 — Your challenge</div><div class="onboard-q">What's your current biggest challenge?</div>
+              <div class="onboard-hint">Pick the one that keeps you up at night.</div>
+              <div class="onboard-options">
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-challenge', 5)">Finding potential customers</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-challenge', 5)">Getting people to respond</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-challenge', 5)">Converting leads to paying</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-challenge', 5)">Knowing which channel to use</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-challenge', 5)">Not enough time to market</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-challenge', 5)">No idea where to start</button>
+              </div>
+              <input type="hidden" id="ans-challenge">
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(5)">← Back</button>
+                <button class="btn-next" id="next-5" onclick="nextStep(5)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="onboard-step" data-step="6">
+              <div class="step-indicator" id="dots-6"></div>
+              <div class="onboard-eyebrow">Step 6 of 10 — Your traction</div><div class="onboard-q">How many customers do you have right now?</div>
+              <div class="onboard-hint">Be honest — zero is a totally valid answer.</div>
+              <div class="onboard-options" style="grid-template-columns: repeat(3,1fr)">
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-customers', 6)">0</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-customers', 6)">1–5</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-customers', 6)">6–20</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-customers', 6)">21–50</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-customers', 6)">51–100</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-customers', 6)">100+</button>
+              </div>
+              <input type="hidden" id="ans-customers">
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(6)">← Back</button>
+                <button class="btn-next" id="next-6" onclick="nextStep(6)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="onboard-step" data-step="7">
+              <div class="step-indicator" id="dots-7"></div>
+              <div class="onboard-eyebrow">Step 7 of 10 — Your availability</div><div class="onboard-q">How much time can you spend on marketing per week?</div>
+              <div class="onboard-hint">Traction will calibrate your plan to fit your availability.</div>
+              <div class="onboard-options" style="grid-template-columns: repeat(2,1fr)">
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-time', 7)">Less than 2 hours</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-time', 7)">2–5 hours</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-time', 7)">5–10 hours</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-time', 7)">10+ hours</button>
+              </div>
+              <input type="hidden" id="ans-time">
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(7)">← Back</button>
+                <button class="btn-next" id="next-7" onclick="nextStep(7)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="onboard-step" data-step="8">
+              <div class="step-indicator" id="dots-8"></div>
+              <div class="onboard-eyebrow">Step 8 of 10 — Your history</div><div class="onboard-q">What channels have you tried so far?</div>
+              <div class="onboard-hint">Select all that apply.</div>
+              <div class="onboard-options">
+                <button class="onboard-opt multi" onclick="toggleMulti(this, 'ans-channels')">Cold email</button>
+                <button class="onboard-opt multi" onclick="toggleMulti(this, 'ans-channels')">LinkedIn outreach</button>
+                <button class="onboard-opt multi" onclick="toggleMulti(this, 'ans-channels')">Social media posts</button>
+                <button class="onboard-opt multi" onclick="toggleMulti(this, 'ans-channels')">Reddit / communities</button>
+                <button class="onboard-opt multi" onclick="toggleMulti(this, 'ans-channels')">Paid ads</button>
+                <button class="onboard-opt multi" onclick="toggleMulti(this, 'ans-channels')">None yet</button>
+              </div>
+              <input type="hidden" id="ans-channels" value="">
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(8)">← Back</button>
+                <button class="btn-next" id="next-8" onclick="nextStep(8)">Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 9 -->
+            <div class="onboard-step" data-step="9">
+              <div class="step-indicator" id="dots-9"></div>
+              <div class="onboard-eyebrow">Step 9 of 10 — Your budget</div><div class="onboard-q">What's your marketing budget per month?</div>
+              <div class="onboard-hint">We'll only recommend what fits your budget.</div>
+              <div class="onboard-options">
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-budget', 9)">$0 — bootstrapping</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-budget', 9)">Under $100</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-budget', 9)">$100–$500</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-budget', 9)">$500–$2,000</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-budget', 9)">$2,000+</button>
+                <button class="onboard-opt" onclick="selectOpt(this, 'ans-budget', 9)">Not sure yet</button>
+              </div>
+              <input type="hidden" id="ans-budget">
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(9)">← Back</button>
+                <button class="btn-next" id="next-9" onclick="nextStep(9)" disabled>Continue →</button>
+              </div>
+            </div>
+
+            <!-- Step 10 -->
+            <div class="onboard-step" data-step="10">
+              <div class="step-indicator" id="dots-10"></div>
+              <div class="onboard-eyebrow">Step 10 of 10 — Final details</div><div class="onboard-q">Anything else Traction should know?</div>
+              <div class="onboard-hint">Competitors, unique advantages, things you've tried that didn't work. Optional but helpful.</div>
+              <textarea class="onboard-input" rows="4" placeholder="e.g. My main competitor is X but we're better because... I tried cold email but got 0 replies..." id="ans-extra"></textarea>
+              <div class="onboard-nav">
+                <button class="btn-back" onclick="prevStep(10)">← Back</button>
+                <button class="btn-next" id="next-10" onclick="finishOnboarding()">Build my plan →</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page" id="page-dashboard">
+        <div class="greeting" id="dash-greeting">Good morning.</div>
+        <div class="greeting-sub" id="dash-sub">Complete your profile to get your personalized plan.</div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-card-icon">🎯</div>
+            <div class="stat-val green" id="dash-customers">0</div>
+            <div class="stat-label">Customers</div>
+            <div class="stat-trend">↑ Goal: 100</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon">✅</div>
+            <div class="stat-val" id="dash-tasks">0</div>
+            <div class="stat-label">Tasks done today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon">🔥</div>
+            <div class="stat-val" id="dash-streak">1</div>
+            <div class="stat-label">Day streak</div>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-title">Today's actions</div>
+            <div class="progress-ring-wrap" id="dash-progress-wrap">
+              <div class="progress-ring">
+                <svg width="72" height="72" viewBox="0 0 72 72">
+                  <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5"/>
+                  <circle id="ring-fill" cx="36" cy="36" r="30" fill="none" stroke="var(--green)" stroke-width="5" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5" style="transition:stroke-dashoffset 0.6s ease"/>
+                </svg>
+                <div class="progress-ring-center">
+                  <div class="progress-ring-num" id="ring-pct">0%</div>
+                  <div class="progress-ring-label">done</div>
+                </div>
+              </div>
+              <div class="progress-ring-text">
+                <div class="progress-ring-title" id="ring-title">No tasks yet</div>
+                <div class="progress-ring-sub" id="ring-sub">Complete your profile to generate today's action plan.</div>
+              </div>
+            </div>
+            <div id="tasks-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Strategy snapshot</div>
+            <div id="strategy-snapshot">
+              <div class="empty-state" style="padding:1.5rem 0">
+                <div class="empty-sub">Your strategy will appear here after onboarding.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAN PAGE -->
+      <div class="page" id="page-plan">
+        <div id="plan-content">
+          <div class="empty-state">
+            <div class="empty-icon">🗺️</div>
+            <div class="empty-title">No plan yet</div>
+            <div class="empty-sub">Complete your business profile to generate your custom acquisition plan.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTREACH PAGE -->
+      <div class="page" id="page-outreach">
+        <div class="outreach-grid">
+          <div class="outreach-sidebar">
+            <div style="font-size:0.75rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;">Templates</div>
+            <button class="template-btn active" onclick="selectTemplate(this, 'cold-email')">
+              <div class="template-name">Cold Email</div>
+              <div class="template-desc">Outbound email to a potential customer</div>
+            </button>
+            <button class="template-btn" onclick="selectTemplate(this, 'linkedin')">
+              <div class="template-name">LinkedIn DM</div>
+              <div class="template-desc">Short connection message or follow-up</div>
+            </button>
+            <button class="template-btn" onclick="selectTemplate(this, 'reddit')">
+              <div class="template-name">Reddit / Community Post</div>
+              <div class="template-desc">Value-first post that promotes subtly</div>
+            </button>
+            <button class="template-btn" onclick="selectTemplate(this, 'followup')">
+              <div class="template-name">Follow-up Email</div>
+              <div class="template-desc">Non-annoying follow-up after no reply</div>
+            </button>
+            <button class="template-btn" onclick="selectTemplate(this, 'partnership')">
+              <div class="template-name">Partnership Pitch</div>
+              <div class="template-desc">Reach out to a potential partner or collab</div>
+            </button>
+          </div>
+          <div class="outreach-main">
+            <div class="outreach-form">
+              <div class="form-row">
+                <div class="form-label">Who are you reaching out to?</div>
+                <input class="form-input" type="text" placeholder="e.g. Solo SaaS founder, 5-person e-commerce brand..." id="outreach-target">
+              </div>
+              <div class="form-row">
+                <div class="form-label">Any specific context? <span style="color:rgba(255,255,255,0.2);font-weight:300">(optional)</span></div>
+                <input class="form-input" type="text" placeholder="e.g. They posted about struggling with customer retention..." id="outreach-context">
+              </div>
+              <button class="btn-generate" id="gen-btn" onclick="generateOutreach()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3.05 3.05l1.41 1.41M9.54 9.54l1.41 1.41M3.05 10.95l1.41-1.41M9.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                Generate with AI
+              </button>
+            </div>
+            <div class="output-box">
+              <div class="output-header">
+                <div class="output-label" id="output-label">Output</div>
+                <button class="btn-copy" onclick="copyOutput()">Copy</button>
+              </div>
+              <div class="output-text" id="output-text">
+                <span class="output-placeholder">Your AI-generated outreach will appear here. Fill in the details above and click generate.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── STATE ──
+  const state = {
+    currentStep: 1,
+    totalSteps: 10,
+    profile: {},
+    plan: null,
+    customers: 0,
+    tasksToday: 0,
+    streak: 1,
+    currentTemplate: 'cold-email'
+  };
+
+  // ── DOTS ──
+  function renderDots(step) {
+    const el = document.getElementById('dots-' + step);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 1; i <= state.totalSteps; i++) {
+      const d = document.createElement('div');
+      d.className = 'step-dot' + (i < step ? ' done' : i === step ? ' current' : '');
+      el.appendChild(d);
+    }
+  }
+
+  for (let i = 1; i <= 10; i++) renderDots(i);
+
+  // ── NAV ──
+  function showPage(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    const titles = { dashboard: ['Dashboard', 'Your daily overview'], plan: ['My Plan', 'Your custom acquisition strategy'], outreach: ['Outreach Writer', 'AI-generated outreach for any channel'], onboarding: ['Business Profile', 'Tell Traction about your business'] };
+    const t = titles[id] || ['Traction', ''];
+    document.getElementById('topbar-title').textContent = t[0];
+    document.getElementById('topbar-sub').textContent = t[1];
+  }
+
+  // ── ONBOARDING ──
+  function checkStep(step) {
+    const inputs = { 1: 'ans-name', 2: 'ans-business', 3: 'ans-customer' };
+    const val = document.getElementById(inputs[step])?.value.trim();
+    document.getElementById('next-' + step).disabled = !val;
+  }
+
+  function selectOpt(btn, fieldId, step) {
+    const parent = btn.closest('.onboard-options');
+    parent.querySelectorAll('.onboard-opt:not(.multi)').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById(fieldId).value = btn.textContent;
+    document.getElementById('next-' + step).disabled = false;
+  }
+
+  function toggleMulti(btn, fieldId) {
+    btn.classList.toggle('selected');
+    const selected = [...document.querySelectorAll('.onboard-opt.multi.selected')].map(b => b.textContent);
+    document.getElementById(fieldId).value = selected.join(', ');
+  }
+
+  function nextStep(step) {
+    document.querySelector('[data-step="' + step + '"]').classList.remove('active');
+    document.querySelector('[data-step="' + (step + 1) + '"]').classList.add('active');
+    state.currentStep = step + 1;
+  }
+
+  function prevStep(step) {
+    document.querySelector('[data-step="' + step + '"]').classList.remove('active');
+    document.querySelector('[data-step="' + (step - 1) + '"]').classList.add('active');
+    state.currentStep = step - 1;
+  }
+
+  function resetOnboarding() {
+    document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
+    document.querySelector('[data-step="1"]').classList.add('active');
+    state.currentStep = 1;
+    document.querySelectorAll('.onboard-opt').forEach(b => b.classList.remove('selected'));
+    ['ans-name','ans-business','ans-customer','ans-price','ans-challenge','ans-customers','ans-time','ans-channels','ans-budget','ans-extra'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['next-1','next-2','next-3','next-4','next-5','next-6','next-7','next-8','next-9'].forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
+  }
+
+  async function finishOnboarding() {
+    state.profile = {
+      name: document.getElementById('ans-name').value.trim(),
+      business: document.getElementById('ans-business').value.trim(),
+      customer: document.getElementById('ans-customer').value.trim(),
+      price: document.getElementById('ans-price').value,
+      challenge: document.getElementById('ans-challenge').value,
+      currentCustomers: document.getElementById('ans-customers').value,
+      timePerWeek: document.getElementById('ans-time').value,
+      channelsTried: document.getElementById('ans-channels').value || 'None yet',
+      budget: document.getElementById('ans-budget').value,
+      extra: document.getElementById('ans-extra').value.trim()
+    };
+
+    // Save profile to Supabase
+    await saveProfile();
+
+    // Set customer count from onboarding
+    const countMap = { '0': 0, '1–5': 3, '6–20': 10, '21–50': 30, '51–100': 60, '100+': 100 };
+    state.customers = countMap[state.profile.currentCustomers] || 0;
+
+    // Update avatar
+    document.getElementById('user-avatar').textContent = state.profile.name[0].toUpperCase();
+
+    // Update sidebar progress
+    updateProgress();
+
+    // Show dashboard
+    showPage('dashboard', document.querySelector('.nav-item'));
+    document.querySelectorAll('.nav-item')[0].classList.add('active');
+
+    // Update dashboard greeting
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('dash-greeting').textContent = greeting + ', ' + state.profile.name + '.';
+    document.getElementById('dash-customers').textContent = state.customers;
+    document.getElementById('dash-tasks').textContent = '0';
+    document.getElementById('dash-streak').textContent = state.streak;
+
+    // Generate plan with AI
+    await generatePlan();
+  }
+
+  function updateProgress() {
+    const pct = Math.min((state.customers / 100) * 100, 100);
+    document.getElementById('sb-progress').style.width = pct + '%';
+    document.getElementById('sb-customer-count').textContent = state.customers;
+  }
+
+  // ── AI PLAN GENERATION ──
+  async function generatePlan() {
+    const p = state.profile;
+
+    // Show loading in dashboard
+    document.getElementById('tasks-list').innerHTML = '<div class="generating"><div class="dot-pulse"><span></span><span></span><span></span></div> Traction is building your plan...</div>';
+    document.getElementById('strategy-snapshot').innerHTML = '<div class="generating"><div class="dot-pulse"><span></span><span></span><span></span></div> Analyzing your business...</div>';
+    document.getElementById('dash-sub').textContent = 'Generating your personalized acquisition plan...';
+
+    const prompt = `You are Traction, an AI customer acquisition co-pilot for founders. Based on this business profile, create a highly specific, actionable acquisition plan.
+
+Business: ${p.business}
+Ideal customer: ${p.customer}
+Price: ${p.price}
+Current customers: ${p.currentCustomers}
+Biggest challenge: ${p.challenge}
+Time available: ${p.timePerWeek} per week
+Budget: ${p.budget}
+Channels tried: ${p.channelsTried}
+Additional context: ${p.extra || 'None'}
+
+Respond ONLY with a valid JSON object in this exact format, no markdown, no explanation:
+{
+  "todaysTasks": [
+    {"text": "specific actionable task", "channel": "channel name", "done": false},
+    {"text": "specific actionable task", "channel": "channel name", "done": false},
+    {"text": "specific actionable task", "channel": "channel name", "done": false}
+  ],
+  "strategySnapshot": [
+    {"channel": "Channel Name", "insight": "1-2 sentence specific strategy for this business"},
+    {"channel": "Channel Name", "insight": "1-2 sentence specific strategy for this business"},
+    {"channel": "Channel Name", "insight": "1-2 sentence specific strategy for this business"}
+  ],
+  "fullPlan": {
+    "quickWins": [
+      {"title": "action title", "description": "specific description for this business"},
+      {"title": "action title", "description": "specific description for this business"}
+    ],
+    "week1": [
+      {"title": "action title", "description": "specific description"},
+      {"title": "action title", "description": "specific description"},
+      {"title": "action title", "description": "specific description"}
+    ],
+    "month1": [
+      {"title": "action title", "description": "specific description"},
+      {"title": "action title", "description": "specific description"}
+    ],
+    "summary": "2-3 sentence summary of the overall strategy for this specific business"
+  }
+}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const raw = data.content.find(b => b.type === 'text')?.text || '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const plan = JSON.parse(clean);
+      state.plan = plan;
+      renderDashboard(plan);
+      renderFullPlan(plan);
+      document.getElementById('dash-sub').textContent = 'Here\'s what to do today to get your next customer.';
+    } catch (e) {
+      document.getElementById('tasks-list').innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:0.875rem;padding:1rem 0">Could not load plan. Check your connection and try again.</div>';
+      document.getElementById('dash-sub').textContent = 'Error generating plan. Please try again.';
+    }
+  }
+
+  function renderDashboard(plan) {
+    // Tasks
+    let taskHtml = '';
+    plan.todaysTasks.forEach((t, i) => {
+      taskHtml += `<div class="task-item" onclick="toggleTask(this, ${i})">
+        <div class="task-check" id="check-${i}"></div>
+        <div>
+          <div class="task-text" id="task-text-${i}">${t.text}</div>
+          <div class="task-tag">${t.channel}</div>
+        </div>
+      </div>`;
+    });
+    document.getElementById('tasks-list').innerHTML = taskHtml;
+
+    // Strategy snapshot
+    let snapHtml = '';
+    plan.strategySnapshot.forEach(s => {
+      snapHtml += `<div class="plan-item"><div class="plan-channel">${s.channel}</div><div class="plan-text">${s.insight}</div></div>`;
+    });
+    document.getElementById('strategy-snapshot').innerHTML = snapHtml;
+    updateRing(0, plan.todaysTasks.length);
+  }
+
+  function toggleTask(el, i) {
+    const check = document.getElementById('check-' + i);
+    const text = document.getElementById('task-text-' + i);
+    const isDone = check.classList.toggle('done');
+    text.classList.toggle('done', isDone);
+    const done = document.querySelectorAll('.task-check.done').length;
+    const total = document.querySelectorAll('.task-check').length;
+    state.tasksToday = done;
+    document.getElementById('dash-tasks').textContent = done;
+    updateRing(done, total);
+  }
+
+  function updateRing(done, total) {
+    if (!total) return;
+    const pct = Math.round((done / total) * 100);
+    const circumference = 188.5;
+    const offset = circumference - (pct / 100) * circumference;
+    document.getElementById('ring-fill').style.strokeDashoffset = offset;
+    document.getElementById('ring-pct').textContent = pct + '%';
+    document.getElementById('ring-title').textContent = done === total
+      ? '🎉 All done for today!'
+      : done + ' of ' + total + ' tasks complete';
+    document.getElementById('ring-sub').textContent = done === total
+      ? 'Incredible work. Come back tomorrow for more.'
+      : (total - done) + ' action' + (total - done > 1 ? 's' : '') + ' left to get closer to your next customer.';
+  }
+
+  function renderFullPlan(plan) {
+    const fp = plan.fullPlan;
+    let html = `<div class="plan-full">
+      <div style="font-family:var(--serif);font-size:1.5rem;color:var(--white);margin-bottom:0.5rem">Your acquisition plan</div>
+      <div style="font-size:0.875rem;color:rgba(255,255,255,0.35);margin-bottom:2rem;font-weight:300">${fp.summary}</div>`;
+
+    const sections = [
+      { key: 'quickWins', label: 'Quick wins', badge: 'Do this week' },
+      { key: 'week1', label: 'Week 1 actions', badge: 'Week 1' },
+      { key: 'month1', label: 'Month 1 goals', badge: 'Month 1' }
+    ];
+
+    sections.forEach(s => {
+      if (!fp[s.key]?.length) return;
+      html += `<div class="plan-section"><div class="plan-section-title">${s.label} <span>${s.badge}</span></div>`;
+      fp[s.key].forEach(item => {
+        html += `<div class="plan-card"><div class="plan-card-title">${item.title}</div><div class="plan-card-body">${item.description}</div></div>`;
+      });
+      html += '</div>';
+    });
+
+    html += '</div>';
+    document.getElementById('plan-content').innerHTML = html;
+  }
+
+  // ── OUTREACH ──
+  function selectTemplate(btn, type) {
+    document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.currentTemplate = type;
+    document.getElementById('output-text').innerHTML = '<span class="output-placeholder">Your AI-generated outreach will appear here.</span>';
+    const labels = { 'cold-email': 'Cold Email', 'linkedin': 'LinkedIn DM', 'reddit': 'Reddit Post', 'followup': 'Follow-up Email', 'partnership': 'Partnership Pitch' };
+    document.getElementById('output-label').textContent = labels[type] || 'Output';
+  }
+
+  async function generateOutreach() {
+    const target = document.getElementById('outreach-target').value.trim();
+    const context = document.getElementById('outreach-context').value.trim();
+    const btn = document.getElementById('gen-btn');
+
+    if (!target) {
+      document.getElementById('outreach-target').focus();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating...';
+    document.getElementById('output-text').innerHTML = '<div class="generating"><div class="dot-pulse"><span></span><span></span><span></span></div> Writing your outreach...</div>';
+
+    const p = state.profile;
+    const typePrompts = {
+      'cold-email': 'a cold outreach email (subject line + body, under 150 words, conversational, value-focused, ends with a soft CTA)',
+      'linkedin': 'a LinkedIn connection request message or DM (under 80 words, casual, no pitching upfront)',
+      'reddit': 'a Reddit or community forum post (300-400 words, value-first, helpful, only mention the product naturally at the end)',
+      'followup': 'a follow-up email after no reply (under 100 words, light touch, adds new value, easy to respond to)',
+      'partnership': 'a partnership outreach email (under 200 words, mutual benefit framing, specific ask)'
+    };
+
+    const businessContext = p.business ? `\nBusiness: ${p.business}\nProduct price: ${p.price}` : '';
+
+    const prompt = `Write ${typePrompts[state.currentTemplate]} for this situation:
+Target: ${target}
+${context ? 'Context: ' + context : ''}${businessContext}
+
+Write only the outreach copy itself. No explanations, no labels, no "Here is your email:" preamble. Just the actual message ready to send.`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const text = data.content.find(b => b.type === 'text')?.text || 'Error generating content.';
+      document.getElementById('output-text').textContent = text;
+    } catch (e) {
+      document.getElementById('output-text').textContent = 'Error generating outreach. Please check your connection and try again.';
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3.05 3.05l1.41 1.41M9.54 9.54l1.41 1.41M3.05 10.95l1.41-1.41M9.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Generate with AI';
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('output-text').textContent;
+    if (!text || text.includes('will appear here')) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+
+  // ── SUPABASE ──
+  const SUPABASE_URL = 'https://grpieuoyinasuuxztvqp.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdycGlldW95aW5hc3V1eHp0dnFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTU5MzQsImV4cCI6MjA5MDQ3MTkzNH0.LHmn9j1BespTCrJLO_0UdtGkPceohd_PtgJyMnf7UdQ';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── AUTH INIT ──
+  async function initAuth() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await loadUserProfile(session.user);
+      showApp();
+    } else {
+      document.getElementById('auth-screen').classList.remove('hidden');
+    }
+  }
+
+  function showApp() {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'grid';
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById('auth-error');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function clearAuthError() {
+    const el = document.getElementById('auth-error');
+    el.classList.remove('visible');
+  }
+
+  function switchAuth(mode) {
+    clearAuthError();
+    document.getElementById('auth-login').style.display = mode === 'login' ? 'block' : 'none';
+    document.getElementById('auth-signup').style.display = mode === 'signup' ? 'block' : 'none';
+  }
+
+  async function handleLogin() {
+    clearAuthError();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('btn-login');
+    if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="border-top-color:var(--black)"></div> Signing in...';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      showAuthError(error.message);
+      btn.disabled = false;
+      btn.textContent = 'Sign in →';
+    } else {
+      await loadUserProfile(data.user);
+      showApp();
+    }
+  }
+
+  async function handleSignup() {
+    clearAuthError();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const btn = document.getElementById('btn-signup');
+    if (!email || !password) { showAuthError('Please fill in all fields.'); return; }
+    if (password.length < 8) { showAuthError('Password must be at least 8 characters.'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="border-top-color:var(--black)"></div> Creating account...';
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) {
+      showAuthError(error.message);
+      btn.disabled = false;
+      btn.textContent = 'Create account →';
+    } else {
+      showApp();
+    }
+  }
+
+  async function loadUserProfile(user) {
+    document.getElementById('user-avatar').textContent = user.email[0].toUpperCase();
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    if (profile && profile.name) {
+      state.profile = {
+        name: profile.name,
+        business: profile.business,
+        customer: profile.customer,
+        price: profile.price,
+        challenge: profile.challenge,
+        currentCustomers: profile.current_customers,
+        timePerWeek: profile.time_per_week,
+        channelsTried: profile.channels_tried,
+        budget: profile.budget,
+        extra: profile.extra
+      };
+      const countMap = { '0': 0, '1-5': 3, '6-20': 10, '21-50': 30, '51-100': 60, '100+': 100 };
+      state.customers = countMap[state.profile.currentCustomers] || 0;
+      document.getElementById('user-avatar').textContent = profile.name[0].toUpperCase();
+      updateProgress();
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('dash-greeting').textContent = greeting + ', ' + profile.name + '.';
+      document.getElementById('dash-customers').textContent = state.customers;
+      document.getElementById('dash-tasks').textContent = '0';
+      document.getElementById('dash-streak').textContent = state.streak;
+      showPage('dashboard', document.querySelector('.nav-item'));
+      document.querySelectorAll('.nav-item')[0].classList.add('active');
+      await generatePlan();
+    }
+  }
+
+  async function saveProfile() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    await sb.from('profiles').upsert({
+      id: user.id,
+      name: state.profile.name,
+      business: state.profile.business,
+      customer: state.profile.customer,
+      price: state.profile.price,
+      challenge: state.profile.challenge,
+      current_customers: state.profile.currentCustomers,
+      time_per_week: state.profile.timePerWeek,
+      channels_tried: state.profile.channelsTried,
+      budget: state.profile.budget,
+      extra: state.profile.extra
+    });
+  }
+
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    location.reload();
+  }
+
+  // Init on load
+  window.addEventListener('DOMContentLoaded', initAuth);
+
+</script>
+</body>
+</html>
